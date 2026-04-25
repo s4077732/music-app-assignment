@@ -1,6 +1,6 @@
 // Adapted from project draft and AWS SDK examples for S3 upload
 // Modified for EC2 + LabRole execution (no hardcoded credentials)
-
+package com.amazonaws.samples;
 import java.io.*;
 import java.net.URL;
 import java.util.HashSet;
@@ -17,7 +17,7 @@ public class S3ArtistImages{
 
     public static void main(String[] args) throws Exception {
 
-        String bucketName = "s4077732-music-app-bucket"; // 🔴 change if needed
+        String bucketName = "music-application-img-upload"; // 🔴 change if needed
 
         File jsonFile = new File("2026a2_songs.json");
 
