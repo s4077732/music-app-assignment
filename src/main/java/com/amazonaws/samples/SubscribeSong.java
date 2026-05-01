@@ -34,6 +34,14 @@ public class SubscribeSong {
         // unique id (important!)
         String songId = title + "_" + year;
 
+        // Check if already exists
+        Item existingItem = table.getItem("email", email, "song_id", songId);
+
+        if (existingItem != null) {
+            System.out.println("Already subscribed!");
+            return;
+        }
+
         Item item = new Item()
                 .withPrimaryKey("email", email, "song_id", songId)
                 .withString("artist", artist)
