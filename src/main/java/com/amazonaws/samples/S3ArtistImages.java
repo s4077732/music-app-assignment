@@ -40,19 +40,21 @@ public class S3ArtistImages {
             String artist = node.path("artist").asText();
             String imageUrl = node.path("img_url").asText();
 
-            if (uploadedArtists.contains(artist)) {
+            String safeArtistName = formatArtistName(artist);
+
+            // Avoid duplicate uploads for the same artist
+            if (uploadedArtists.contains(safeArtistName)) {
                 continue;
             }
 
             try {
-                String safeArtistName = artist.replaceAll("[^a-zA-Z0-9]", "_");
                 String fileName = safeArtistName + ".jpg";
 
                 uploadImageDirectlyToS3(s3, bucketName, fileName, imageUrl);
 
-                uploadedArtists.add(artist);
+                uploadedArtists.add(safeArtistName);
 
-                System.out.println("Uploaded: " + artist);
+                System.out.println("Uploaded: " + artist + " as " + fileName);
 
             } catch (Exception e) {
                 System.out.println("Failed: " + artist);
@@ -83,5 +85,14 @@ public class S3ArtistImages {
         try (InputStream inputStream = connection.getInputStream()) {
             s3.putObject(bucketName, fileName, inputStream, metadata);
         }
+    }
+
+    // Converts artist names into safe S3 object names.
+    // Example: "Guns N' Roses" -> "Guns_N_Roses", "fun." -> "fun"
+    public static String formatArtistName(String artist) {
+        return artist
+                .replaceAll("[^a-zA-Z0-9]", "_")
+                .replaceAll("_+", "_")
+                .replaceAll("^_|_$", "");
     }
 }
