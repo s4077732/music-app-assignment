@@ -1,10 +1,378 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>$Title$</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Music Subscription App</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            background: #f4f6f8;
+            color: #222;
+        }
+
+        header {
+            background: #111827;
+            color: white;
+            padding: 16px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 22px;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 24px auto;
+            padding: 0 16px;
+        }
+
+        .card {
+            background: white;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        input {
+            width: 100%;
+            padding: 10px;
+            margin: 8px 0 14px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            box-sizing: border-box;
+        }
+
+        button {
+            padding: 10px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            background: #2563eb;
+            color: white;
+            margin-right: 8px;
+        }
+
+        button.remove {
+            background: #dc2626;
+        }
+
+        button.secondary {
+            background: #4b5563;
+        }
+
+        .message {
+            margin-top: 10px;
+            font-weight: bold;
+        }
+
+        .error {
+            color: #dc2626;
+        }
+
+        .success {
+            color: #15803d;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 16px;
+        }
+
+        .song {
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            padding: 14px;
+            background: #fafafa;
+        }
+
+        .song img {
+            width: 100%;
+            height: 180px;
+            object-fit: cover;
+            border-radius: 8px;
+            margin: 10px 0;
+            background: #e5e7eb;
+        }
+
+        .top-actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+    </style>
 </head>
 <body>
-$END$
+<header>
+    <h1>Music Subscription App</h1>
+    <div class="top-actions">
+        <button id="logoutBtn" class="secondary hidden" onclick="logout()">Logout</button>
+    </div>
+</header>
+
+<div class="container">
+    <section id="authSection" class="card">
+        <h2>Login</h2>
+        <input id="loginEmail" type="email" placeholder="Email" />
+        <input id="loginPassword" type="password" placeholder="Password" />
+        <button onclick="login()">Login</button>
+
+        <hr />
+
+        <h2>Register</h2>
+        <input id="registerEmail" type="email" placeholder="Email" />
+        <input id="registerUserName" type="text" placeholder="User name" />
+        <input id="registerPassword" type="password" placeholder="Password" />
+        <button onclick="registerUser()">Register</button>
+
+        <p id="authMessage" class="message"></p>
+    </section>
+
+    <section id="mainSection" class="hidden">
+        <div class="card">
+            <h2>User Area</h2>
+            <p>Welcome, <strong id="userNameDisplay"></strong></p>
+        </div>
+
+        <div class="card">
+            <h2>Subscription Area</h2>
+            <p id="subscriptionMessage" class="message"></p>
+            <div id="subscriptions" class="grid"></div>
+        </div>
+
+        <div class="card">
+            <h2>Query Area</h2>
+            <input id="queryTitle" type="text" placeholder="Title" />
+            <input id="queryYear" type="text" placeholder="Year" />
+            <input id="queryArtist" type="text" placeholder="Artist" />
+            <input id="queryAlbum" type="text" placeholder="Album" />
+            <button onclick="querySongs()">Query</button>
+            <p id="queryMessage" class="message"></p>
+            <div id="queryResults" class="grid"></div>
+        </div>
+    </section>
+</div>
+
+<script>
+    // API Gateway invoke URL for Lambda backend
+    const API_BASE_URL = "https://8dsvbws98e.execute-api.us-east-1.amazonaws.com/dev";
+
+    let currentUser = JSON.parse(localStorage.getItem("musicAppUser"));
+
+    window.onload = function () {
+        if (currentUser) {
+            showMainPage();
+            loadSubscriptions();
+        }
+    };
+
+    function setMessage(id, message, type) {
+        const element = document.getElementById(id);
+        element.textContent = message || "";
+        element.className = "message " + (type || "");
+    }
+
+    async function apiRequest(path, method, body = null) {
+        const options = {
+            method,
+            headers: {
+                "Content-Type": "application/json"
+            }
+        };
+
+        if (body) {
+            options.body = JSON.stringify(body);
+        }
+
+        const response = await fetch(API_BASE_URL + path, options);
+        const text = await response.text();
+
+        try {
+            return JSON.parse(text);
+        } catch (e) {
+            return text;
+        }
+    }
+
+    async function login() {
+        const email = document.getElementById("loginEmail").value.trim();
+        const password = document.getElementById("loginPassword").value.trim();
+
+        if (!email || !password) {
+            setMessage("authMessage", "Please enter email and password.", "error");
+            return;
+        }
+
+        const data = await apiRequest("/login", "POST", { email, password });
+
+        if (data.status === "success") {
+            currentUser = {
+                email: data.email,
+                user_name: data.user_name
+            };
+            localStorage.setItem("musicAppUser", JSON.stringify(currentUser));
+            setMessage("authMessage", "Login successful.", "success");
+            showMainPage();
+            loadSubscriptions();
+        } else {
+            setMessage("authMessage", data.message || "Login failed.", "error");
+        }
+    }
+
+    async function registerUser() {
+        const email = document.getElementById("registerEmail").value.trim();
+        const userName = document.getElementById("registerUserName").value.trim();
+        const password = document.getElementById("registerPassword").value.trim();
+
+        if (!email || !userName || !password) {
+            setMessage("authMessage", "Please complete all register fields.", "error");
+            return;
+        }
+
+        const data = await apiRequest("/register", "POST", { email, userName, password });
+
+        if (data.status === "success") {
+            setMessage("authMessage", "Registration successful. Please login.", "success");
+        } else {
+            setMessage("authMessage", data.message || "Registration failed.", "error");
+        }
+    }
+
+    function showMainPage() {
+        document.getElementById("authSection").classList.add("hidden");
+        document.getElementById("mainSection").classList.remove("hidden");
+        document.getElementById("logoutBtn").classList.remove("hidden");
+        document.getElementById("userNameDisplay").textContent = currentUser.user_name;
+    }
+
+    function logout() {
+        localStorage.removeItem("musicAppUser");
+        currentUser = null;
+        document.getElementById("authSection").classList.remove("hidden");
+        document.getElementById("mainSection").classList.add("hidden");
+        document.getElementById("logoutBtn").classList.add("hidden");
+        setMessage("authMessage", "Logged out successfully.", "success");
+    }
+
+    async function querySongs() {
+        const title = document.getElementById("queryTitle").value.trim();
+        const year = document.getElementById("queryYear").value.trim();
+        const artist = document.getElementById("queryArtist").value.trim();
+        const album = document.getElementById("queryAlbum").value.trim();
+
+        if (!title && !year && !artist && !album) {
+            setMessage("queryMessage", "Please enter at least one search field.", "error");
+            return;
+        }
+
+        const params = new URLSearchParams();
+        if (title) params.append("title", title);
+        if (year) params.append("year", year);
+        if (artist) params.append("artist", artist);
+        if (album) params.append("album", album);
+
+        const data = await apiRequest("/query?" + params.toString(), "GET");
+        const resultsDiv = document.getElementById("queryResults");
+        resultsDiv.innerHTML = "";
+
+        if (data.message) {
+            setMessage("queryMessage", data.message, "error");
+            return;
+        }
+
+        setMessage("queryMessage", "Results retrieved successfully.", "success");
+
+        data.forEach(song => {
+            resultsDiv.appendChild(createSongCard(song, "subscribe"));
+        });
+    }
+
+    async function subscribeSong(song) {
+        const data = await apiRequest("/subscribe", "POST", {
+            email: currentUser.email,
+            title: song.title,
+            artist: song.artist,
+            year: String(song.year),
+            album: song.album
+        });
+
+        setMessage("queryMessage", data.message || "Subscribe request completed.", "success");
+        loadSubscriptions();
+    }
+
+    async function loadSubscriptions() {
+        const data = await apiRequest("/subscriptions?email=" + encodeURIComponent(currentUser.email), "GET");
+        const subDiv = document.getElementById("subscriptions");
+        subDiv.innerHTML = "";
+
+        if (!Array.isArray(data) || data.length === 0) {
+            setMessage("subscriptionMessage", "No subscribed music yet.", "");
+            return;
+        }
+
+        setMessage("subscriptionMessage", "", "");
+        data.forEach(song => {
+            subDiv.appendChild(createSongCard(song, "remove"));
+        });
+    }
+
+    async function removeSubscription(song) {
+        const songId = song.song_id || (song.title + "_" + song.year);
+        const path = "/subscription?email=" + encodeURIComponent(currentUser.email) +
+            "&songId=" + encodeURIComponent(songId);
+
+        const data = await apiRequest(path, "DELETE");
+        setMessage("subscriptionMessage", data.message || "Subscription removed.", "success");
+        loadSubscriptions();
+    }
+
+    function createSongCard(song, actionType) {
+        const card = document.createElement("div");
+        card.className = "song";
+
+        const title = song.title || "Unknown title";
+        const artist = song.artist || "Unknown artist";
+        const year = song.year || "";
+        const album = song.album || "";
+        const imageUrl = song.image_url || "";
+
+        card.innerHTML = `
+        <h3>${title}</h3>
+        <p><strong>Artist:</strong> ${artist}</p>
+        <p><strong>Year:</strong> ${year}</p>
+        <p><strong>Album:</strong> ${album}</p>
+        <img src="${imageUrl}" alt="${artist}" onerror="this.style.display='none'" />
+      `;
+
+        const button = document.createElement("button");
+
+        if (actionType === "subscribe") {
+            button.textContent = "Subscribe";
+            button.onclick = function () {
+                subscribeSong(song);
+            };
+        } else {
+            button.textContent = "Remove";
+            button.className = "remove";
+            button.onclick = function () {
+                removeSubscription(song);
+            };
+        }
+
+        card.appendChild(button);
+        return card;
+    }
+</script>
 </body>
 </html>
