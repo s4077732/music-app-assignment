@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>126 Music App</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --bg: #070b1d;
+      --card: rgba(13, 20, 43, 0.92);
+      --card2: rgba(22, 31, 61, 0.92);
+      --border: rgba(255,255,255,0.10);
+      --text: #f8fafc;
+      --muted: #9ca3af;
+      --accent: #a855f7;
+      --accent2: #7c3aed;
+      --success: #22c55e;
+      --error: #ef4444;
+      --font-heading: "Playfair Display", Georgia, serif;
+      --font-body: "DM Sans", Arial, sans-serif;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: var(--font-body);
+      background:
+        radial-gradient(circle at top left, rgba(168,85,247,0.18), transparent 32%),
+        radial-gradient(circle at bottom right, rgba(59,130,246,0.14), transparent 35%),
+        linear-gradient(135deg, #070b1d, #0f172a, #111827);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    .hidden { display: none !important; }
+
+    header {
+      background: rgba(3,7,18,0.92);
+      padding: 18px 30px;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      backdrop-filter: blur(14px);
+    }
+
+    .logo {
+      font-family: var(--font-heading);
+      font-size: 44px;
+      color: var(--accent);
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+
+    .hero {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: calc(100vh - 85px);
+      padding: 40px 20px;
+    }
+
+    .auth-card {
+      width: 100%;
+      max-width: 620px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 30px;
+      padding: 42px;
+      backdrop-filter: blur(14px);
+      box-shadow: 0 18px 55px rgba(0,0,0,0.45);
+    }
+
+    .hero-title {
+      font-family: var(--font-heading);
+      font-size: 62px;
+      line-height: 1;
+      margin-bottom: 18px;
+    }
+
+    .hero-title span {
+      color: var(--accent);
+      font-style: italic;
+    }
+
+    .hero-sub {
+      color: var(--muted);
+      font-size: 19px;
+      margin-bottom: 32px;
+    }
+
+    .tabs {
+      display: flex;
+      margin-bottom: 28px;
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      overflow: hidden;
+    }
+
+    .tab {
+      flex: 1;
+      padding: 16px;
+      text-align: center;
+      cursor: pointer;
+      color: var(--muted);
+      background: transparent;
+      border: none;
+      font-size: 17px;
+      font-family: var(--font-body);
+    }
+
+    .tab.active {
+      background: rgba(255,255,255,0.10);
+      color: white;
+    }
+
+    .form-group { margin-bottom: 22px; }
+
+    label {
+      display: block;
+      margin-bottom: 10px;
+      color: var(--muted);
+      font-size: 12px;
+      letter-spacing: 1px;
+      font-weight: 700;
+    }
+
+    input {
+      width: 100%;
+      padding: 16px 18px;
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.06);
+      color: white;
+      font-size: 16px;
+      font-family: var(--font-body);
+    }
+
+    input:focus {
+      outline: none;
+      border-color: var(--accent);
+      background: rgba(255,255,255,0.09);
+    }
+
+    input::placeholder { color: #8b93aa; }
+
+    button {
+      border: none;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      color: white;
+      cursor: pointer;
+      transition: 0.25s;
+      font-family: var(--font-body);
+      font-weight: 700;
+    }
+
+    button:hover {
+      transform: translateY(-2px);
+      opacity: 0.96;
+    }
+
+    .main-btn {
+      width: 100%;
+      padding: 16px;
+      border-radius: 16px;
+      font-size: 18px;
+    }
+
+    .message {
+      margin-top: 16px;
+      text-align: center;
+      font-size: 15px;
+      min-height: 18px;
+      font-weight: 600;
+    }
+
+    .success { color: var(--success); }
+    .error { color: var(--error); }
+
+    .dashboard {
+      padding: 28px;
+      max-width: 1280px;
+      margin: 0 auto;
+    }
+
+    .profile-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 20px;
+    }
+
+    .logout-btn {
+      padding: 13px 26px;
+      font-size: 16px;
+      border-radius: 14px;
+      min-width: 110px;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 30px;
+      margin-bottom: 28px;
+      box-shadow: 0 10px 35px rgba(0,0,0,0.18);
+    }
+
+    .card h2 {
+      margin-bottom: 18px;
+      font-size: 34px;
+      font-family: var(--font-heading);
+      letter-spacing: 0.2px;
+    }
+
+    .card p { color: var(--muted); }
+
+    .query-grid {
+      display: grid;
+      gap: 18px;
+    }
+
+    .song-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 22px;
+      margin-top: 22px;
+    }
+
+    .song {
+      background: linear-gradient(180deg, rgba(31,41,75,0.98), rgba(17,24,50,0.98));
+      color: var(--text);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 20px;
+      padding: 18px;
+      overflow: hidden;
+      box-shadow: 0 12px 34px rgba(0,0,0,0.28);
+      display: flex;
+      flex-direction: column;
+      min-height: 430px;
+    }
+
+    .song:hover {
+      transform: translateY(-4px);
+      border-color: rgba(168,85,247,0.45);
+      transition: 0.25s;
+    }
+
+    .song h3 {
+      font-size: 21px;
+      line-height: 1.15;
+      margin-bottom: 12px;
+      color: white;
+      font-weight: 700;
+    }
+
+    .song p {
+      color: #d1d5db;
+      font-size: 15px;
+      margin-bottom: 6px;
+      line-height: 1.25;
+    }
+
+    .song p strong {
+      color: white;
+    }
+
+    .song img {
+      width: 100%;
+      height: 210px;
+      object-fit: cover;
+      border-radius: 16px;
+      margin: 14px 0 16px;
+      display: block;
+      background: transparent;
+    }
+
+    .song button {
+      width: 100%;
+      margin-top: auto;
+      padding: 13px 18px;
+      font-size: 15px;
+      border-radius: 14px;
+    }
+
+    .remove {
+      background: linear-gradient(90deg,#ef4444,#b91c1c);
+    }
+
+    .empty-text {
+      color: var(--muted);
+      font-size: 15px;
+      padding-top: 4px;
+    }
+
+    @media (max-width: 700px) {
+      .logo { font-size: 34px; }
+      .hero-title { font-size: 44px; }
+      .auth-card { padding: 28px; }
+      .dashboard { padding: 18px; }
+      .profile-row { flex-direction: column; }
+      .logout-btn { width: 100%; }
+      .song-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <div class="logo">126 Music App</div>
+  </header>
+
+  <section id="authSection" class="hero">
+    <div class="auth-card">
+      <h1 class="hero-title">Your music,<br><span>beautifully</span> curated.</h1>
+      <p class="hero-sub">Discover and subscribe to the songs you love.</p>
+
+      <div class="tabs">
+        <button id="loginTab" class="tab active" onclick="showLogin()">Sign in</button>
+        <button id="registerTab" class="tab" onclick="showRegister()">Create account</button>
+      </div>
+
+      <div id="loginForm">
+        <div class="form-group">
+          <label>EMAIL</label>
+          <input type="email" id="loginEmail" placeholder="you@example.com">
+        </div>
+
+        <div class="form-group">
+          <label>PASSWORD</label>
+          <input type="password" id="loginPassword" placeholder="Enter password">
+        </div>
+
+        <button class="main-btn" onclick="login()">Sign in</button>
+      </div>
+
+      <div id="registerForm" class="hidden">
+        <div class="form-group">
+          <label>EMAIL</label>
+          <input type="email" id="registerEmail" placeholder="you@example.com">
+        </div>
+
+        <div class="form-group">
+          <label>USERNAME</label>
+          <input type="text" id="registerUserName" placeholder="Your name">
+        </div>
+
+        <div class="form-group">
+          <label>PASSWORD</label>
+          <input type="password" id="registerPassword" placeholder="Create password">
+        </div>
+
+        <button class="main-btn" onclick="registerUser()">Create account</button>
+      </div>
+
+      <div id="authMessage" class="message"></div>
+    </div>
+  </section>
+
+  <section id="mainSection" class="hidden">
+    <div class="dashboard">
+
+      <div class="card profile-row">
+        <div>
+          <h2>My Profile</h2>
+          <p>Welcome, <span id="userNameDisplay"></span></p>
+          <p id="userEmailDisplay"></p>
+        </div>
+        <button class="logout-btn" onclick="logout()">Logout</button>
+      </div>
+
+      <div class="card">
+        <h2>My Playlist</h2>
+        <div id="subscriptionMessage" class="message"></div>
+        <div id="subscriptions" class="song-grid"></div>
+      </div>
+
+      <div class="card">
+        <h2>What do you want to listen to?</h2>
+
+        <div class="query-grid">
+          <input type="text" id="queryTitle" placeholder="Title">
+          <input type="text" id="queryYear" placeholder="Year">
+          <input type="text" id="queryArtist" placeholder="Artist">
+          <input type="text" id="queryAlbum" placeholder="Album">
+          <button class="main-btn" onclick="querySongs()">Query</button>
+        </div>
+
+        <div id="queryMessage" class="message"></div>
+        <div id="queryResults" class="song-grid"></div>
+      </div>
+
+    </div>
+  </section>
+
+  <script>
+    const API_BASE_URL = "https://selqlwxi43.execute-api.us-east-1.amazonaws.com/dev";
+
+    let currentUser = JSON.parse(localStorage.getItem("musicAppUser"));
+
+    window.onload = function () {
+      if (currentUser) {
+        showMainPage();
+        loadSubscriptions();
+      }
+    };
+
+    function setMessage(id, message, type) {
+      const element = document.getElementById(id);
+      if (!element) return;
+      element.textContent = message || "";
+      element.className = "message " + (type || "");
+    }
+
+    function showLogin() {
+      document.getElementById("loginForm").classList.remove("hidden");
+      document.getElementById("registerForm").classList.add("hidden");
+      document.getElementById("loginTab").classList.add("active");
+      document.getElementById("registerTab").classList.remove("active");
+      setMessage("authMessage", "", "");
+    }
+
+    function showRegister() {
+      document.getElementById("registerForm").classList.remove("hidden");
+      document.getElementById("loginForm").classList.add("hidden");
+      document.getElementById("registerTab").classList.add("active");
+      document.getElementById("loginTab").classList.remove("active");
+      setMessage("authMessage", "", "");
+    }
+
+    async function apiRequest(path, method, body = null) {
+      const options = {
+        method: method,
+        headers: { "Content-Type": "application/json" }
+      };
+
+      if (body) {
+        options.body = JSON.stringify(body);
+      }
+
+      const response = await fetch(API_BASE_URL + path, options);
+      const text = await response.text();
+
+      try {
+        return JSON.parse(text);
+      } catch (e) {
+        return text;
+      }
+    }
+
+    async function login() {
+      const email = document.getElementById("loginEmail").value.trim();
+      const password = document.getElementById("loginPassword").value.trim();
+
+      if (!email || !password) {
+        setMessage("authMessage", "Please enter email and password.", "error");
+        return;
+      }
+
+      try {
+        const data = await apiRequest("/login", "POST", { email, password });
+
+        if (data.status === "success") {
+          currentUser = {
+            email: data.email,
+            user_name: data.user_name
+          };
+
+          localStorage.setItem("musicAppUser", JSON.stringify(currentUser));
+          showMainPage();
+          loadSubscriptions();
+        } else {
+          setMessage("authMessage", data.message || "Login failed.", "error");
+        }
+      } catch (error) {
+        setMessage("authMessage", "Cannot connect to backend. Check EC2 and CORS.", "error");
+      }
+    }
+
+    async function registerUser() {
+      const email = document.getElementById("registerEmail").value.trim();
+      const userName = document.getElementById("registerUserName").value.trim();
+      const password = document.getElementById("registerPassword").value.trim();
+
+      if (!email || !userName || !password) {
+        setMessage("authMessage", "Please complete all register fields.", "error");
+        return;
+      }
+
+      try {
+        const data = await apiRequest("/register", "POST", { email, userName, password });
+
+        if (data.status === "success") {
+          setMessage("authMessage", "Registration successful. Please login.", "success");
+          showLogin();
+        } else {
+          setMessage("authMessage", data.message || "Registration failed.", "error");
+        }
+      } catch (error) {
+        setMessage("authMessage", "Cannot connect to backend. Check EC2 and CORS.", "error");
+      }
+    }
+
+    function showMainPage() {
+      document.getElementById("authSection").classList.add("hidden");
+      document.getElementById("mainSection").classList.remove("hidden");
+
+      document.getElementById("userNameDisplay").textContent = currentUser.user_name || "";
+      document.getElementById("userEmailDisplay").textContent = currentUser.email || "";
+    }
+
+    function logout() {
+      localStorage.removeItem("musicAppUser");
+      currentUser = null;
+      document.getElementById("authSection").classList.remove("hidden");
+      document.getElementById("mainSection").classList.add("hidden");
+      document.getElementById("queryResults").innerHTML = "";
+      setMessage("authMessage", "Logged out successfully.", "success");
+    }
+
+    async function querySongs() {
+      const title = document.getElementById("queryTitle").value.trim();
+      const year = document.getElementById("queryYear").value.trim();
+      const artist = document.getElementById("queryArtist").value.trim();
+      const album = document.getElementById("queryAlbum").value.trim();
+
+      if (!title && !year && !artist && !album) {
+        setMessage("queryMessage", "Please enter at least one search field.", "error");
+        return;
+      }
+
+      setMessage("queryMessage", "Searching...", "");
+      const resultsDiv = document.getElementById("queryResults");
+      resultsDiv.innerHTML = "";
+
+      const params = new URLSearchParams();
+      if (title) params.append("title", title);
+      if (year) params.append("year", year);
+      if (artist) params.append("artist", artist);
+      if (album) params.append("album", album);
+
+      try {
+        const data = await apiRequest("/query?" + params.toString(), "GET");
+
+        if (!Array.isArray(data) || data.length === 0) {
+          setMessage("queryMessage", "No results found.", "error");
+          return;
+        }
+
+        setMessage("queryMessage", "Results retrieved successfully.", "success");
+
+        data.forEach(song => {
+          resultsDiv.appendChild(createSongCard(song, "subscribe"));
+        });
+      } catch (error) {
+        setMessage("queryMessage", "Query failed. Check backend connection.", "error");
+      }
+    }
+
+ async function subscribeSong(song) {
+  const imageUrl = song.image_url || song.img_url || song.imageUrl || "";
+
+  const data = await apiRequest("/subscribe", "POST", {
+    email: currentUser.email,
+    title: song.title,
+    artist: song.artist,
+    year: String(song.year),
+    album: song.album,
+    imageUrl: imageUrl,
+    image_url: imageUrl
+  });
+
+  setMessage("queryMessage", data.message || "Subscribed successfully.", "success");
+  await loadSubscriptions();
+}
+
+    async function loadSubscriptions() {
+      const subDiv = document.getElementById("subscriptions");
+      subDiv.innerHTML = "";
+
+      try {
+        const data = await apiRequest("/subscriptions?email=" + encodeURIComponent(currentUser.email), "GET");
+
+        if (!Array.isArray(data) || data.length === 0) {
+          subDiv.innerHTML = '<div class="empty-text">No subscribed music yet.</div>';
+          setMessage("subscriptionMessage", "", "");
+          return;
+        }
+
+        setMessage("subscriptionMessage", "", "");
+
+        data.forEach(song => {
+          subDiv.appendChild(createSongCard(song, "remove"));
+        });
+      } catch (error) {
+        subDiv.innerHTML = '<div class="empty-text">Could not load playlist.</div>';
+      }
+    }
+
+    async function removeSubscription(song) {
+      const songId = song.song_id || (song.title + "_" + song.year);
+      const path = "/subscription?email=" + encodeURIComponent(currentUser.email) +
+        "&songId=" + encodeURIComponent(songId);
+
+      try {
+        const data = await apiRequest(path, "DELETE");
+        setMessage("subscriptionMessage", data.message || "Subscription removed.", "success");
+        await loadSubscriptions();
+      } catch (error) {
+        setMessage("subscriptionMessage", "Remove failed.", "error");
+      }
+    }
+
+   function createSongCard(song, actionType) {
+
+  const card = document.createElement("div");
+  card.className = "song";
+
+  const imageUrl =
+    song.image_url ||
+    song.img_url ||
+    song.imageUrl ||
+    "";
+
+  card.innerHTML = `
+    <h3>${song.title || "Unknown"}</h3>
+
+    <p><strong>Artist:</strong> ${song.artist || ""}</p>
+    <p><strong>Year:</strong> ${song.year || ""}</p>
+    <p><strong>Album:</strong> ${song.album || ""}</p>
+
+    ${
+      imageUrl
+        ? `<img src="${imageUrl}" alt="${song.artist}" onerror="this.style.display='none'">`
+        : ""
+    }
+  `;
+
+  const button = document.createElement("button");
+
+  if (actionType === "subscribe") {
+    button.textContent = "Subscribe";
+    button.onclick = () => subscribeSong(song);
+  } else {
+    button.textContent = "Remove";
+    button.className = "remove";
+    button.onclick = () => removeSubscription(song);
+  }
+
+  card.appendChild(button);
+
+  return card;
+}
+
+  </script>
+</body>
+</html>
