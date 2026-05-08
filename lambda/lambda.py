@@ -5,7 +5,7 @@
 import json
 import boto3
 from decimal import Decimal
-from boto3.dynamodb.conditions import Attr
+from boto3.dynamodb.conditions import Attr, Key
 
 # Connect to DynamoDB in us-east-1
 dynamodb = boto3.resource("dynamodb", region_name="us-east-1")
@@ -39,30 +39,15 @@ def response(status_code, body):
 # Parse JSON body safely
 def get_body(event):
     if event.get("body"):
-        return json.loads(event["body"])
+        try:
+            return json.loads(event["body"])
+        except Exception:
+            return {}
     return {}
-
-
-# Format artist name for S3 image URL
-def format_artist_name(artist):
-    safe = ""
-    previous_underscore = False
-
-    for ch in artist:
-        if ch.isalnum():
-            safe += ch
-            previous_underscore = False
-        else:
-            if not previous_underscore:
-                safe += "_"
-                previous_underscore = True
-
-    return safe.strip("_")
 
 
 # Main Lambda handler
 def lambda_handler(event, context):
-
 
     # Supports both REST API format and HTTP API format
     method = event.get("httpMethod")
@@ -75,9 +60,10 @@ def lambda_handler(event, context):
     if not path:
         path = event.get("rawPath")
 
-    # Remove stage name if present
+    # Remove stage name if present, for example /dev/login -> /login
     if path:
         path = path.replace("/dev", "")
+
     query = event.get("queryStringParameters") or {}
     body = get_body(event)
 
@@ -111,6 +97,12 @@ def lambda_handler(event, context):
         user_name = body.get("userName")
         password = body.get("password")
 
+        if not email or not user_name or not password:
+            return response(400, {
+                "status": "error",
+                "message": "Please complete all fields"
+            })
+
         existing = login_table.get_item(Key={"email": email}).get("Item")
 
         if existing:
@@ -130,7 +122,7 @@ def lambda_handler(event, context):
             "message": "User registered successfully"
         })
 
-    # GET /query?artist=Taylor Swift&album=Fearless
+    # GET /query?artist=Taylor Swift&album=Reputation
     if method == "GET" and path == "/query":
 
         title = query.get("title")
@@ -145,20 +137,26 @@ def lambda_handler(event, context):
 
         filter_exp = None
 
+        # Partial matching for title, artist and album.
+        # Example: album=Reputation will return both "Reputation" and "Reputation (Deluxe)".
         if title:
-            condition = Attr("title").eq(title)
+            condition = Attr("title").contains(title)
             filter_exp = condition if filter_exp is None else filter_exp & condition
 
         if year:
-            condition = Attr("year").eq(int(year))
+            try:
+                condition = Attr("year").eq(int(year))
+            except ValueError:
+                condition = Attr("year").eq(year)
+
             filter_exp = condition if filter_exp is None else filter_exp & condition
 
         if artist:
-            condition = Attr("artist").eq(artist)
+            condition = Attr("artist").contains(artist)
             filter_exp = condition if filter_exp is None else filter_exp & condition
 
         if album:
-            condition = Attr("album").eq(album)
+            condition = Attr("album").contains(album)
             filter_exp = condition if filter_exp is None else filter_exp & condition
 
         result = music_table.scan(FilterExpression=filter_exp)
@@ -179,10 +177,18 @@ def lambda_handler(event, context):
         year = str(body.get("year"))
         album = body.get("album")
 
-        song_id = title + "_" + year
+        # IMPORTANT:
+        # Use the exact image URL coming from the frontend/query result.
+        # Do NOT rebuild it from the artist name.
+        image_url = body.get("imageUrl") or body.get("image_url") or body.get("img_url") or ""
 
-        safe_artist = format_artist_name(artist)
-        image_url = "https://music-application-img-upload.s3.amazonaws.com/" + safe_artist + ".jpg"
+        if not email or not title or not artist or not year:
+            return response(400, {
+                "status": "error",
+                "message": "Missing subscription details"
+            })
+
+        song_id = title + "_" + year
 
         existing = subscription_table.get_item(
             Key={
@@ -216,8 +222,14 @@ def lambda_handler(event, context):
     if method == "GET" and path == "/subscriptions":
         email = query.get("email")
 
+        if not email:
+            return response(400, {
+                "status": "error",
+                "message": "Email is required"
+            })
+
         result = subscription_table.query(
-            KeyConditionExpression=boto3.dynamodb.conditions.Key("email").eq(email)
+            KeyConditionExpression=Key("email").eq(email)
         )
 
         return response(200, result.get("Items", []))
@@ -226,6 +238,12 @@ def lambda_handler(event, context):
     if method == "DELETE" and path == "/subscription":
         email = query.get("email")
         song_id = query.get("songId")
+
+        if not email or not song_id:
+            return response(400, {
+                "status": "error",
+                "message": "Email and songId are required"
+            })
 
         subscription_table.delete_item(
             Key={
