@@ -545,8 +545,14 @@
       try {
         const data = await apiRequest("/query?" + params.toString(), "GET");
 
+        // Handle no-results message object returned by backend
+        if (data && data.message) {
+          setMessage("queryMessage", data.message, "error");
+          return;
+        }
+
         if (!Array.isArray(data) || data.length === 0) {
-          setMessage("queryMessage", "No results found.", "error");
+          setMessage("queryMessage", "No result is retrieved. Please query again", "error");
           return;
         }
 
