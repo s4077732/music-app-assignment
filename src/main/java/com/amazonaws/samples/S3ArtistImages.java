@@ -1,5 +1,4 @@
-// Adapted from AWS SDK S3 upload examples
-// Modified for Assessment 2 to upload artist images directly from URL to S3
+
 
 package com.amazonaws.samples;
 
