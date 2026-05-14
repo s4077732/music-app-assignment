@@ -23,8 +23,20 @@ public class CreateSubscriptionTable {
         String tableName = "subscription";
 
         try {
+            /*
+             * Create the subscription table.
+             * This table stores the songs subscribed by each user.
+             */
             Table table = dynamoDB.createTable(
                     tableName,
+
+                    /*
+                     * Primary key design:
+                     * - email is the partition key, so all subscriptions for one user
+                     *   can be retrieved efficiently.
+                     * - song_id is the sort key, so each user can subscribe to multiple songs
+                     *   without overwriting previous subscriptions.
+                     */
                     Arrays.asList(
                             new KeySchemaElement("email", KeyType.HASH),
                             new KeySchemaElement("song_id", KeyType.RANGE)
@@ -33,13 +45,16 @@ public class CreateSubscriptionTable {
                             new AttributeDefinition("email", ScalarAttributeType.S),
                             new AttributeDefinition("song_id", ScalarAttributeType.S)
                     ),
+                    // Set the read and write capacity for the table.
                     new ProvisionedThroughput(10L, 10L)
             );
 
+            // Wait until the table is fully created before using it.
             table.waitForActive();
             System.out.println("Subscription table created: " + table.getDescription().getTableStatus());
 
         } catch (ResourceInUseException e) {
+            // If the table already exists, the program continues without creating it again.
             System.out.println("Subscription table already exists.");
         }
     }

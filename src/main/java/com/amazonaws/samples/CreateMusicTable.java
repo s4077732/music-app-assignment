@@ -1,7 +1,5 @@
 package com.amazonaws.samples;
 
-import java.util.Arrays;
-
 import com.amazonaws.client.builder.AwsClientBuilder;
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
@@ -33,6 +31,11 @@ public class CreateMusicTable {
         try {
             System.out.println("Creating table '" + tableName + "'...");
 
+            /*
+             * Create the music table.
+             * The key schema is designed to avoid overwriting songs when loading
+             * data from the JSON file.
+             */
             CreateTableRequest request = new CreateTableRequest()
                     .withTableName(tableName)
 
@@ -88,15 +91,17 @@ public class CreateMusicTable {
                                     .withProjection(new Projection().withProjectionType(ProjectionType.ALL))
                                     .withProvisionedThroughput(new ProvisionedThroughput(10L, 10L))
                     );
-
+            // Create the table and wait until DynamoDB marks it as active.
             Table table = dynamoDB.createTable(request);
             table.waitForActive();
 
             System.out.println("Success. Table status: " + table.getDescription().getTableStatus());
 
         } catch (ResourceInUseException e) {
+            // This prevents the program from failing if the table has already been created.
             System.out.println("Table '" + tableName + "' already exists.");
         } catch (Exception e) {
+            // Print the error details if the table creation fails for another reason.
             System.err.println("Unable to create table:");
             System.err.println(e.getMessage());
             e.printStackTrace();

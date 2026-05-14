@@ -14,7 +14,7 @@ public class GetUserSubscriptions {
 
     public static void main(String[] args) {
 
-        // Test value. Later this will come from logged-in user session.
+        // Test value.
         String email = "s40777320@student.rmit.edu.au";
 
         List<Item> subscriptions = getSubscriptions(email);
@@ -22,6 +22,7 @@ public class GetUserSubscriptions {
         if (subscriptions.isEmpty()) {
             System.out.println("No subscriptions yet.");
         } else {
+            // Print each subscribed song returned from DynamoDB.
             for (Item item : subscriptions) {
                 System.out.println("-------------------");
                 System.out.println("Title: " + item.getString("title"));
@@ -33,7 +34,11 @@ public class GetUserSubscriptions {
         }
     }
 
-    // This method can be called by UI/API later.
+    /*
+     * Retrieve all songs subscribed by a specific user.
+     * The email is used as the partition key, so DynamoDB can efficiently
+     * return all subscription records belonging to that user.
+     */
     public static List<Item> getSubscriptions(String email) {
 
         List<Item> subscriptions = new ArrayList<>();
@@ -43,8 +48,14 @@ public class GetUserSubscriptions {
                 .build();
 
         DynamoDB dynamoDB = new DynamoDB(client);
+
+        // Access the subscription table that stores user-song subscription records.
         Table table = dynamoDB.getTable("subscription");
 
+        /*
+         * Query the subscription table using the user's email.
+         * This returns all songs subscribed by that user because email is the partition key.
+         */
         QuerySpec querySpec = new QuerySpec()
                 .withKeyConditionExpression("email = :email")
                 .withValueMap(new ValueMap().withString(":email", email));
@@ -52,11 +63,13 @@ public class GetUserSubscriptions {
         try {
             ItemCollection<QueryOutcome> items = table.query(querySpec);
 
+            // Add each returned DynamoDB item to the subscription list.
             for (Item item : items) {
                 subscriptions.add(item);
             }
 
         } catch (Exception e) {
+            // Print an error if DynamoDB cannot return the user's subscriptions.
             System.err.println("Unable to get subscriptions:");
             System.err.println(e.getMessage());
         }

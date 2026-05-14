@@ -15,6 +15,8 @@ public class CreateLoginTable {
 
     public static void main(String[] args) throws Exception {
 
+        // Create a DynamoDB client in the us-east-1 region.
+        // This client is used to communicate with the DynamoDB service in AWS.
         AmazonDynamoDB client = AmazonDynamoDBClientBuilder.standard()
                 .withRegion(Regions.US_EAST_1)
                 .build();
@@ -22,13 +24,18 @@ public class CreateLoginTable {
         DynamoDB dynamoDB = new DynamoDB(client);
 
         String tableName = "login";
-        String studentId = "s4077732";   // your student id
-        String userBaseName = "NithyaJ"; // your name
+        // Base values used to generate the 10 sample login users required for the assignment.
+        String studentId = "s4077732";
+        String userBaseName = "NithyaJ";
 
         try {
             System.out.println("Creating table...");
 
-            // Create table
+            /*
+             * Create the login table with email as the partition key.
+             * The email is used as the unique identifier because each user must register
+             * with a unique email address.
+             */
             Table table = dynamoDB.createTable(
                     tableName,
                     Arrays.asList(new KeySchemaElement("email", KeyType.HASH)), // Partition key
@@ -36,6 +43,7 @@ public class CreateLoginTable {
                     new ProvisionedThroughput(10L, 10L)
             );
 
+            // Wait until the table becomes active before inserting any data.
             table.waitForActive();
             System.out.println("Success.  Table status: " + table.getDescription().getTableStatus());
 
@@ -62,6 +70,7 @@ public class CreateLoginTable {
             System.out.println("All 10 records inserted successfully!");
 
         } catch (Exception e) {
+            // Print an error message if the table already exists or if DynamoDB rejects the request.
             System.err.println("Unable to create table: ");
             System.err.println(e.getMessage());
         }
